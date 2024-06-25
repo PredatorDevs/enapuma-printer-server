@@ -1,0 +1,37 @@
+import { Router } from 'express';
+const router = Router();
+
+import { controller } from '../controllers/printers.cjs';
+
+const {
+  printCCF,
+  validatePrinterConnection,
+  printTicketKitchen,
+  printTicketPreAccount,
+  printPackOff,
+  printCFTicket,
+  printInternalSaleTicket,
+  printCF,
+  testPrinterConnection,
+  testNetworkPrinterConnection,
+  printTestPage,
+  printGuideLines,
+  printCharLine
+} = controller;
+
+router.get('/print-guide-lines', printGuideLines);
+router.get('/print-char-line', printCharLine);
+
+router.get('/test-network', testNetworkPrinterConnection);
+router.get('/test', testPrinterConnection);
+router.post('/validate-connection', validatePrinterConnection);
+router.get('/testpage', printTestPage);
+router.post('/ccf', printCCF);
+router.post('/cf', printCF);
+router.post('/cfticket', printCFTicket);
+router.post('/internalsaleticket', printInternalSaleTicket);
+router.post('/printTicketKitchen', printTicketKitchen);
+router.post('/printTicketPreAccount', printTicketPreAccount);
+router.post('/printPackOff', printPackOff);
+
+export default router;
