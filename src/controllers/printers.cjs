@@ -1,4 +1,5 @@
 const escpos = require('escpos');
+const dayjs = require('dayjs');
 const fs = require('fs');
 const ping = require('ping');
 const { exec } = require('child_process')
@@ -154,7 +155,7 @@ controller.printTicketPreAccount = (req, res) => {
     const { orderDetails, orderInfo, ticketName, date, time } = ticketBody;
 
     //const networkDevice = new escpos.Network('192.168.1.100', 9100);
-    const networkDevice = new escpos.Network('192.168.0.5', 9101);
+    const networkDevice = new escpos.Network('192.168.0.5', 9105);
 
     const options = { encoding: "GB18030", width: 56 /* default */ }
     const printer = new escpos.Printer(networkDevice, options);
@@ -307,8 +308,8 @@ controller.printPackOff = (req, res) => {
 controller.testNetworkPrinterConnection = (req, res) => {
   try {
     // const device  = new escpos.USB(vId, pId);
-    // const networkDevice = new escpos.Network('127.0.0.1', 9101);
-    const networkDevice = new escpos.Network('192.168.0.5', 9101);
+    // const networkDevice = new escpos.Network('127.0.0.1', 9105);
+    const networkDevice = new escpos.Network('192.168.0.5', 9105);
 
     const options = { encoding: "GB18030", width: 56 /* default */ }
     const printer = new escpos.Printer(networkDevice, options);
@@ -346,10 +347,10 @@ controller.testNetworkPrinterConnection = (req, res) => {
 
 controller.testPrinterConnection = (req, res) => {
   try {
-    console.log(escpos.USB.findPrinter());
+    // console.log(escpos.USB.findPrinter());
 
     const device  = new escpos.USB(vId, pId);
-    // const networkDevice = new escpos.Network('192.168.0.2', 9101);
+    // const device = new escpos.Network('127.0.0.1', 9105);
 
     const options = { encoding: "GB18030", width: 56 /* default */ }
     const printer = new escpos.Printer(device, options);
@@ -365,6 +366,29 @@ controller.testPrinterConnection = (req, res) => {
     });
   } catch (err) {
     console.log(err);
+    res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
+  }
+}
+
+controller.testCashdrawerOpenAction = (req, res) => {
+  try {
+    const device = new escpos.USB(vId, pId);
+    const options = { encoding: "GB18030", width: 48 /* default */ }
+    const printer = new escpos.Printer(device, options);
+
+    device.open(function(error){
+      printer
+      // .feed(2)
+      .cashdraw(2)
+      .close((err) => {
+        if (err) {
+          res.json({ data: "Print error" });
+        } else {
+          res.json({ data: "Print success" });
+        }
+      });
+    });
+  } catch(err) {
     res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
   }
 }
@@ -398,7 +422,8 @@ async function checkPrinterOnline(ipAddress) {
 
 controller.printTestPage = (req, res) => {
   try {
-    const device = new escpos.USB(vId, pId);
+    // const device  = new escpos.USB(vId, pId);
+    const device = new escpos.Network('127.0.0.1', 9105);
     const options = { encoding: "GB18030", width: 56 /* default */ }
     const printer = new escpos.Printer(device, options);
 
@@ -596,7 +621,8 @@ controller.printCCF = (req, res) => {
 
 controller.printCFTicket = (req, res) => {
   try {
-    const device = new escpos.USB(vId, pId);
+    // const device  = new escpos.USB(vId, pId);
+    const device = new escpos.Network('127.0.0.1', 9105);
     const options = { encoding: "GB18030", width: 48 /* default */ }
     const printer = new escpos.Printer(device, options);
 
@@ -709,7 +735,8 @@ controller.printCFTicket = (req, res) => {
 
 controller.printInternalSaleTicket = (req, res) => {
   try {
-    const device = new escpos.USB(vId, pId);
+    // const device  = new escpos.USB(vId, pId);
+    const device = new escpos.Network('127.0.0.1', 9105);
     const options = { encoding: "GB18030", width: 48 /* default */ }
     const printer = new escpos.Printer(device, options);
 
@@ -825,6 +852,381 @@ controller.printInternalSaleTicket = (req, res) => {
           res.json({ data: "Print success" });
         }
       });
+    });
+  } catch(err) {
+    res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
+  }
+}
+
+controller.printDteVoucher = (req, res) => {
+  try {
+    const device  = new escpos.USB(vId, pId);
+    // const device = new escpos.Network('127.0.0.1', 9105);
+    const options = { encoding: "GB18030", width: 48 /* default */ }
+    const printer = new escpos.Printer(device, options);
+
+    // invoiceHeaderData = { customerFullname, documentDatetime, customerAddress, customerDui, customerNit, customerPhone, totalSale, totalToLetters }
+    // invoiceBodyData = [{ quantity, description, unitPrice, subTotal }]
+    const { invoiceHeaderData, invoiceBodyData } = req.body;
+
+    if (invoiceHeaderData === undefined || invoiceBodyData === undefined) {
+      throw "You must provide a header and body sale data to print";
+    }
+
+    const {
+      cashierId,
+    controlNumber,
+    cotransTaxAmount,
+    createdBy,
+    createdByFullname,
+    currencyType,
+    customerAddress,
+    customerBusinessLine,
+    customerCityMhCode,
+    customerCityName,
+    customerCode,
+    customerDefPhoneNumber,
+    customerDepartmentMhCode,
+    customerDepartmentName,
+    customerDui,
+    customerEconomicActivityCode,
+    customerEconomicActivityName,
+    customerEmail,
+    customerFullname,
+    customerId,
+    customerNit,
+    customerNrc,
+    customerOccupation,
+    docDate,
+    docDatetime,
+    docDatetimeFormatted,
+    docDatetimeLabel,
+    docNumber,
+    docTime,
+    documentTypeId,
+    documentTypeName,
+    dteTransmitionStatus,
+    dteTransmitionStatusName,
+    dteType,
+    establishmentType,
+    estCodeInternal,
+    estCodeMH,
+    expirationDays,
+    expirationInformation,
+    expired,
+    expiresIn,
+    fovialTaxAmount,
+    generationCode,
+    id: currentSaleId,
+    isNoTaxableOperation,
+    isVoided,
+    IVAperception,
+    IVAretention,
+    ivaTaxAmount,
+    locationAddress,
+    locationCityMhCode,
+    locationCityName,
+    locationDepartmentMhCode,
+    locationDepartmentName,
+    locationEmail,
+    locationId,
+    locationName,
+    locationPhone,
+    noTaxableSubTotal,
+    ownerActivityCode,
+    ownerActivityDescription,
+    ownerName,
+    ownerNit,
+    ownerNrc,
+    ownerTradename,
+    paymentStatus,
+    paymentStatusName,
+    paymentTypeId,
+    paymentTypeName,
+    posCodeInternal,
+    posCodeMH,
+    receptionStamp,
+    saleTotalPaid,
+    serie,
+    shiftcutId,
+    taxableSubTotal,
+    taxableSubTotalWithoutTaxes,
+    total,
+    totalInLetters,
+    totalTaxes,
+    transmissionModel,
+    transmissionModelName,
+    transmissionType,
+    transmissionTypeName,
+    userPINCodeFullName,
+    voidedByFullname,
+    notes
+    } = invoiceHeaderData;
+
+    let totalToLettersSplited = (totalInLetters || " ( ").split("(", 2);
+    let totalToLettersPartOne = totalToLettersSplited[0];
+    let totalToLettersPartTwo = `(${totalToLettersSplited[1]}`;
+
+    device.open(function(error){
+      printer
+      .font('A')
+      .align('CT')
+      .style('NORMAL')
+      .size(0, 0)
+      .text(ownerTradename || '')
+      .text(locationAddress || '')
+      .text(locationPhone || '')
+      // .text('*** TICKET DE CONTROL INTERNO ***')
+      // .text(`NIT: ${'0000-000000-000-0'} - NRC: ${'00000-0'}`)
+      .feed(1)
+      .align('LT')
+      .tableCustom([
+        { text: `COD INTERNO: ${currentSaleId}`, align: "LEFT", width: 0.50 },
+        { text: `COND: ${String(paymentTypeName).toUpperCase()}`, align: "RIGHT", width: 0.50 }
+      ])
+      .tableCustom([
+        { text: `DOC: ${documentTypeName}`, align: "LEFT", width: 0.50 },
+        { text: `SUC: ${String(locationName).toUpperCase()}`, align: "RIGHT", width: 0.50 }
+      ])
+      .text(`FECHA: ${dayjs(docDatetime).format('YYYY-MM-DD hh:mm:ss')}`)
+      .text(`CLIENTE: ${customerFullname}`)
+      .text(`DUI: ${customerDui || '-'}`)
+      .text(`NIT: ${customerNit || '-'}`)
+      .text(`NRC: ${customerNrc || '-'}`)
+      // .qrimage('https://github.com/song940/node-escpos', function(err){
+
+      // })
+      .feed(1) // LINE 9
+      .align('CT')
+      // .text('------------------------------------------------')
+      // .tableCustom([
+      //   { text: `DESCRIPCION`, align: "LEFT", width: 1 }
+      // ])
+      // .style('U')
+      .tableCustom([
+        // { text: `CANT.`, align: "LEFT", width: 0.15 },
+        { text: `DESCRIPCION`, align: "LEFT", width: 0.55 },
+        // { text: `PRES.`, align: "LEFT", width: 0.25 },
+        { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `SUBTOTAL`, align: "RIGHT", width: 0.20 }
+      ])
+      .text('------------------------------------------------')
+      // .feed(1)
+      for (let i = 0; i < invoiceBodyData.length; i++) {
+        const {
+          saleDetailId,
+          saleId,
+          productId,
+          productTypeId,
+          productCode,
+          productName,
+          productMeasurementUnitId,
+          categoryName,
+          brandName,
+          measurementUnitName,
+          unitPrice,
+          unitPriceNoTaxes,
+          unitPriceIva,
+          unitPriceFovial,
+          unitPriceCotrans,
+          unitCost,
+          unitCostNoTaxes,
+          subTotalCost,
+          totalCostTaxes,
+          totalCost,
+          quantity,
+          subTotal,
+          isVoided,
+          isActive,
+          taxesData,
+          ivaTaxAmount,
+          fovialTaxAmount,
+          cotransTaxAmount,
+          totalTaxes,
+          taxableSubTotal,
+          taxableSubTotalWithoutTaxes,
+          noTaxableSubTotal
+        } = invoiceBodyData[i];
+        // printer.tableCustom([
+        //   { text: `${invoiceBodyData[i].productName || ""}`, align: "LEFT", width: 1 }
+        // ])
+        printer.style('U').tableCustom([
+          // { text: `${Number(invoiceBodyData[i].quantity).toFixed(0) || 0}`, align: "LEFT", width: 0.15 },
+          { text: `${productName || ""}`, align: "LEFT", width: 0.99 },
+          // { text: `${"UNID"} x`, align: "LEFT", width: 0.25 },
+          // { text: `${Number(quantity).toFixed(4) || 0} x ${(+unitPrice - (+unitPriceFovial + +unitPriceCotrans + (isNoTaxableOperation ? +unitPriceIva : 0))).toFixed(4) || 0}`, align: "RIGHT", width: 0.25 },
+          // { text: `${(isNoTaxableOperation === 1 ? (+noTaxableSubTotal - +ivaTaxAmount - +fovialTaxAmount - +cotransTaxAmount) : (+taxableSubTotal - ((documentTypeId === 1 || documentTypeId === 2) ? 0 : +ivaTaxAmount) - +fovialTaxAmount - +cotransTaxAmount)).toFixed(4) || 0}`, align: "RIGHT", width: 0.20 }
+        ]);
+
+        printer.style('U').tableCustom([
+          // { text: `${Number(invoiceBodyData[i].quantity).toFixed(0) || 0}`, align: "LEFT", width: 0.15 },
+          // { text: `${"UNID"} x`, align: "LEFT", width: 0.25 },
+          { text: `${Number(quantity).toFixed(4) || 0} x $${(+unitPrice - (+unitPriceFovial + +unitPriceCotrans + (isNoTaxableOperation ? +unitPriceIva : 0))).toFixed(4) || 0}`, align: "LEFT", width: 0.50 },
+          { text: `${(isNoTaxableOperation === 1 ? (+noTaxableSubTotal - +ivaTaxAmount - +fovialTaxAmount - +cotransTaxAmount) : (+taxableSubTotal - ((documentTypeId === 1 || documentTypeId === 2) ? 0 : +ivaTaxAmount) - +fovialTaxAmount - +cotransTaxAmount)).toFixed(4) || 0}`, align: "RIGHT", width: 0.50 }
+        ]);
+
+        if((i + 1) < invoiceBodyData.length) printer.feed(1);
+      } // LINE 15
+      printer.style('NORMAL')
+      // .feed(1)
+      .text('------------------------------------------------')
+      // .text('------------------------------------------')
+      .tableCustom([
+        { text: `GRAVADO`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${(isNoTaxableOperation ? 0 : taxableSubTotal - ((+fovialTaxAmount + +cotransTaxAmount + ((documentTypeId === 1 || documentTypeId === 2) ? 0 : +ivaTaxAmount)) || 0)).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ])
+      .tableCustom([
+        { text: `EXENTO`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${(isNoTaxableOperation ? taxableSubTotalWithoutTaxes : 0).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ])
+      .tableCustom([
+        { text: `SUMA TOTAL DE OPERACIONES`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${(isNoTaxableOperation ? taxableSubTotalWithoutTaxes : taxableSubTotal - ((+fovialTaxAmount + +cotransTaxAmount + ((documentTypeId === 1 || documentTypeId === 2) ? 0 : +ivaTaxAmount)))).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ]);
+      if (!(documentTypeId === 1 || documentTypeId === 2)) {
+        printer.tableCustom([
+          { text: `IVA`, align: "RIGHT", width: 0.75 },
+          // { text: ``, align: "LEFT", width: 0.25 },
+          // { text: ``, align: "RIGHT", width: 0.25 },
+          { text: `${Number(isNoTaxableOperation ? 0 : ivaTaxAmount).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+        ]);
+      }
+      printer.tableCustom([
+        { text: `SUBTOTAL`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${(isNoTaxableOperation ? taxableSubTotalWithoutTaxes : taxableSubTotal - ((+fovialTaxAmount + +cotransTaxAmount))).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ])
+      .tableCustom([
+        { text: `IVA PERCIBIDO (1%)`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${Number(IVAperception).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ])
+      .tableCustom([
+        { text: `IVA RETENIDO (1%)`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${Number(IVAretention).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ]);
+      if (+fovialTaxAmount !== null && +fovialTaxAmount > 0) {
+        printer.tableCustom([
+          { text: `FOVIAL ($0.20/gal)`, align: "RIGHT", width: 0.75 },
+          // { text: ``, align: "LEFT", width: 0.25 },
+          // { text: ``, align: "RIGHT", width: 0.25 },
+          { text: `${Number(fovialTaxAmount).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+        ]);
+      }
+      if (+cotransTaxAmount !== null && +cotransTaxAmount > 0) {
+        printer.tableCustom([
+          { text: `COTRANS ($0.10/gal)`, align: "RIGHT", width: 0.75 },
+          // { text: ``, align: "LEFT", width: 0.25 },
+          // { text: ``, align: "RIGHT", width: 0.25 },
+          { text: `${Number(cotransTaxAmount).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+        ]);
+      }
+      printer.tableCustom([
+        { text: `RETE. RENTA`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${Number(0).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ])
+      .tableCustom([
+        { text: `MONTO TOTAL OPERACION`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${Number(+total - (isNoTaxableOperation ? +ivaTaxAmount : 0) - +IVAretention + +IVAperception).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ])
+      .tableCustom([
+        { text: `OTROS MONTOS NO AFECTOS`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${Number(0).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ])
+      .tableCustom([
+        { text: `TOTAL A PAGAR`, align: "RIGHT", width: 0.75 },
+        // { text: ``, align: "LEFT", width: 0.25 },
+        // { text: ``, align: "RIGHT", width: 0.25 },
+        { text: `${Number(+total - (isNoTaxableOperation ? +ivaTaxAmount : 0) - +IVAretention + +IVAperception).toFixed(2) || 0}`, align: "RIGHT", width: 0.25 }
+      ])
+      // .tableCustom([
+      //   { text: `TOTAL`, align: "LEFT", width: 0.30 },
+      //   { text: ``, align: "LEFT", width: 0.25 },
+      //   { text: ``, align: "RIGHT", width: 0.25 },
+      //   { text: `${total || 0}`, align: "RIGHT", width: 0.20 }
+      // ])
+      .align('CT')
+      .feed(1)
+      .text(`CODIGO DE GENERACION:`)
+      .text(`${generationCode}`)
+      .text(`NUMERO DE CONTROL:`)
+      .text(`${controlNumber}`)
+      .text(`SELLO RECEPCION`)
+      .text(`${receptionStamp}`)
+      .feed(1)
+      .tableCustom([
+        { text: `ESTADO:`, align: "LEFT", width: 0.50 },
+        { text: `${dteTransmitionStatusName}`, align: "RIGHT", width: 0.50 }
+      ])
+      .tableCustom([
+        { text: `TIPO:`, align: "LEFT", width: 0.50 },
+        { text: `${transmissionTypeName}`, align: "RIGHT", width: 0.50 }
+      ])
+      .tableCustom([
+        { text: `MODELO TRANSMISION:`, align: "LEFT", width: 0.50 },
+        { text: `${transmissionModelName}`, align: "RIGHT", width: 0.50 }
+      ])
+      .align('CT')
+      // .text('')
+      // .feed(2)
+      .control('FF')
+      // .qrcode(
+      //   `https://admin.factura.gob.sv/consultaPublica?ambiente=01&codGen=${generationCode || ''}&fechaEmi=${dayjs(docDatetime).format('YYYY-MM-DD') || ''}`,
+      //   undefined,
+      //   "h",
+      //   50
+      // )
+      // .text('*** ESTE COMPROBANTE NO TIENE EFECTO FISCAL ***')
+      // .feed(2)
+      // .cut()
+      // .close((err) => {
+      //   if (err) {
+      //     res.json({ data: "Print error" });
+      //   } else {
+      //     res.json({ data: "Print success" });
+      //   }
+      // });
+      .qrimage(
+        `https://admin.factura.gob.sv/consultaPublica?ambiente=01&codGen=${generationCode || ''}&fechaEmi=${dayjs(docDatetime).format('YYYY-MM-DD') || ''}`,
+        { type: 'png', mode: 'dhdw', size: 3 },
+        function(err){
+        this.text('*** ESTE COMPROBANTE NO TIENE EFECTO FISCAL ***');
+        this.feed(2);
+        this.cut();
+        this.close((err) => {
+          if (err) {
+            res.json({ data: "Print error" });
+          } else {
+            res.json({ data: "Print success" });
+          }
+        });
+      });
+      // .cut()
+      // .feed(2)
+      // .cashdraw(2)
+      // .close((err) => {
+      //   if (err) {
+      //     res.json({ data: "Print error" });
+      //   } else {
+      //     res.json({ data: "Print success" });
+      //   }
+      // });
     });
   } catch(err) {
     res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
@@ -951,7 +1353,8 @@ controller.printCF = (req, res) => {
 
 controller.printGuideLines = (req, res) => {
   try {
-    const device = new escpos.USB(vId, pId);
+    // const device  = new escpos.USB(vId, pId);
+    const device = new escpos.Network('127.0.0.1', 9105);
     const options = { encoding: "GB18030", width: 56 /* default */ }
     const printer = new escpos.Printer(device, options);
 
@@ -1038,7 +1441,8 @@ controller.printGuideLines = (req, res) => {
 
 controller.printCharLine = (req, res) => {
   try {
-    const device = new escpos.USB(vId, pId);
+    // const device  = new escpos.USB(vId, pId);
+    const device = new escpos.Network('127.0.0.1', 9105);
     const options = { encoding: "GB18030", width: 56 /* default */ }
     const printer = new escpos.Printer(device, options);
 
