@@ -309,7 +309,7 @@ controller.testNetworkPrinterConnection = (req, res) => {
   try {
     // const device  = new escpos.USB(vId, pId);
     // const networkDevice = new escpos.Network('127.0.0.1', 9105);
-    const networkDevice = new escpos.Network('192.168.0.5', 9105);
+    const networkDevice = new escpos.Network('192.168.1.100', 9100);
 
     const options = { encoding: "GB18030", width: 56 /* default */ }
     const printer = new escpos.Printer(networkDevice, options);
@@ -1468,6 +1468,280 @@ controller.printCharLine = (req, res) => {
       });
     });
   } catch(err) {
+    res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
+  }
+}
+
+controller.printSaleDetailsToNetworkPrinter = (req, res) => {
+  try {
+    const { printerIp, printerPort, detailsData, headData } = req.body;
+
+    const {
+      id,
+      controlNumber,
+      generationCode,
+      dteType,
+      receptionStamp,
+      dteTransmitionStatus,
+      dteTransmitionStatusName,
+      transmissionType,
+      transmissionTypeName,
+      transmissionModel,
+      transmissionModelName,
+      currencyType,
+      shiftcutId,
+      isNoTaxableOperation,
+      customerComplementaryName,
+      cashierId,
+      estCodeInternal,
+      estCodeMH,
+      posCodeInternal,
+      posCodeMH,
+      locationId,
+      locationName,
+      locationPhone,
+      locationAddress,
+      locationDepartmentName,
+      locationCityName,
+      locationDepartmentMhCode,
+      locationCityMhCode,
+      locationEmail,
+      ownerNit,
+      ownerNrc,
+      ownerName,
+      ownerActivityCode,
+      ownerActivityDescription,
+      ownerTradename,
+      establishmentType,
+      customerId,
+      documentTypeId,
+      documentTypeName,
+      paymentTypeId,
+      paymentTypeName,
+      createdBy,
+      createdByFullname,
+      userPINCodeFullName,
+      docDatetime,
+      docDatetimeFormatted,
+      docDate,
+      docTime,
+      docDatetimeLabel,
+      docNumber,
+      serie,
+      paymentStatus,
+      expirationDays,
+      expirationInformation,
+      expiresIn,
+      expired,
+      IVAretention,
+      IVAperception,
+      paymentStatusName,
+      isVoided,
+      voidedByFullname,
+      total,
+      ivaTaxAmount,
+      fovialTaxAmount,
+      cotransTaxAmount,
+      totalTaxes,
+      taxableSubTotal,
+      taxableSubTotalWithoutTaxes,
+      noTaxableSubTotal,
+      totalInLetters,
+      notes,
+      saleTotalPaid,
+      customerCode,
+      customerFullname,
+      customerAddress,
+      customerDefPhoneNumber,
+      customerEmail,
+      customerDui,
+      customerNit,
+      customerNrc,
+      customerBusinessLine,
+      customerOccupation,
+      customerDepartmentName,
+      customerCityName,
+      customerDepartmentMhCode,
+      customerCityMhCode,
+      customerEconomicActivityCode,
+      customerEconomicActivityName
+    } = headData;
+
+    const networkDevice = new escpos.Network(printerIp, printerPort);
+
+    const options = { encoding: "860", width: 48 /* default */ }
+    const printer = new escpos.Printer(networkDevice, options);
+
+    const remoteAddress = req.headers['x-real-ip'] || req.connection.remoteAddress;
+
+    networkDevice.open(function(error){
+      if (error) {
+        console.error('Error al abrir la conexión con la impresora:', error);
+        return res.status(500).json({ status: 500, message: 'Error al conectar con la impresora', errorContent: error });
+      }
+
+      printer
+      .font('A')
+      .align('CT')
+      .style('NORMAL')
+      .size(0, 0)
+      .feed(5)
+      .text(`COCINA`)
+      .text('-----------------------------------------')
+      .align('LT')
+      .text(`ORDEN N° ${id}`)
+      .text(`Fecha: ${docDatetime}`)
+      .text(`Cliente: ${customerFullname}`)
+      .align('CT')
+      .text('-----------------------------------------')
+      .align('LT');
+      for (let i = 0; i < detailsData.length; i++) {
+        const {
+          saleDetailId,
+          saleId,
+          productId,
+          productTypeId,
+          productCode,
+          productName,
+          productMeasurementUnitId,
+          categoryName,
+          brandName,
+          measurementUnitName,
+          unitPrice,
+          unitPriceNoTaxes,
+          unitPriceIva,
+          unitPriceFovial,
+          unitPriceCotrans,
+          unitCost,
+          unitCostNoTaxes,
+          subTotalCost,
+          totalCostTaxes,
+          totalCost,
+          quantity,
+          subTotal,
+          isVoided,
+          isActive,
+          taxesData,
+          ivaTaxAmount,
+          fovialTaxAmount,
+          cotransTaxAmount,
+          totalTaxes,
+          taxableSubTotal,
+          taxableSubTotalWithoutTaxes,
+          noTaxableSubTotal
+        } = detailsData[i];
+
+        let isNoTaxableOperation = false;
+        let documentTypeId = 2;
+        // printer.tableCustom([
+        //   { text: `${invoiceBodyData[i].productName || ""}`, align: "LEFT", width: 1 }
+        // ])
+        printer.style('U').tableCustom([
+          // { text: `${Number(invoiceBodyData[i].quantity).toFixed(0) || 0}`, align: "LEFT", width: 0.15 },
+          { text: `${Number(quantity).toFixed(4) || ""}`, align: "LEFT", width: 0.20 },
+          { text: `${""}`, align: "LEFT", width: 0.04 },
+          { text: `${productName || ""}`, align: "LEFT", width: 0.75 },
+          // { text: `${"UNID"} x`, align: "LEFT", width: 0.25 },
+          // { text: `${Number(quantity).toFixed(4) || 0} x ${(+unitPrice - (+unitPriceFovial + +unitPriceCotrans + (isNoTaxableOperation ? +unitPriceIva : 0))).toFixed(4) || 0}`, align: "RIGHT", width: 0.25 },
+          // { text: `${(isNoTaxableOperation === 1 ? (+noTaxableSubTotal - +ivaTaxAmount - +fovialTaxAmount - +cotransTaxAmount) : (+taxableSubTotal - ((documentTypeId === 1 || documentTypeId === 2) ? 0 : +ivaTaxAmount) - +fovialTaxAmount - +cotransTaxAmount)).toFixed(4) || 0}`, align: "RIGHT", width: 0.20 }
+        ]);
+
+        // printer.style('U').tableCustom([
+        //   // { text: `${Number(invoiceBodyData[i].quantity).toFixed(0) || 0}`, align: "LEFT", width: 0.15 },
+        //   // { text: `${"UNID"} x`, align: "LEFT", width: 0.25 },
+        //   { text: `${Number(quantity).toFixed(4) || 0} x $${(+unitPrice - (+unitPriceFovial + +unitPriceCotrans + (isNoTaxableOperation ? +unitPriceIva : 0))).toFixed(4) || 0}`, align: "LEFT", width: 0.50 },
+        //   { text: `${(isNoTaxableOperation === 1 ? (+noTaxableSubTotal - +ivaTaxAmount - +fovialTaxAmount - +cotransTaxAmount) : (+taxableSubTotal - ((documentTypeId === 1 || documentTypeId === 2) ? 0 : +ivaTaxAmount) - +fovialTaxAmount - +cotransTaxAmount)).toFixed(4) || 0}`, align: "RIGHT", width: 0.50 }
+        // ]);
+
+        if((i + 1) < detailsData.length) printer.feed(1);
+      }
+      printer.feed(4)
+      .cut()
+      .align('CT')
+      .style('NORMAL')
+      .size(0, 0)
+      .feed(5)
+      .text(`CLIENTE`)
+      .text('-----------------------------------------')
+      .align('LT')
+      .text(`ORDEN N° ${id}`)
+      .text(`Fecha: ${docDatetime}`)
+      .text(`Cliente: ${customerFullname}`)
+      .align('CT')
+      .text('-----------------------------------------')
+      .align('LT');
+      for (let i = 0; i < detailsData.length; i++) {
+        const {
+          saleDetailId,
+          saleId,
+          productId,
+          productTypeId,
+          productCode,
+          productName,
+          productMeasurementUnitId,
+          categoryName,
+          brandName,
+          measurementUnitName,
+          unitPrice,
+          unitPriceNoTaxes,
+          unitPriceIva,
+          unitPriceFovial,
+          unitPriceCotrans,
+          unitCost,
+          unitCostNoTaxes,
+          subTotalCost,
+          totalCostTaxes,
+          totalCost,
+          quantity,
+          subTotal,
+          isVoided,
+          isActive,
+          taxesData,
+          ivaTaxAmount,
+          fovialTaxAmount,
+          cotransTaxAmount,
+          totalTaxes,
+          taxableSubTotal,
+          taxableSubTotalWithoutTaxes,
+          noTaxableSubTotal
+        } = detailsData[i];
+
+        let isNoTaxableOperation = false;
+        let documentTypeId = 2;
+        // printer.tableCustom([
+        //   { text: `${invoiceBodyData[i].productName || ""}`, align: "LEFT", width: 1 }
+        // ])
+        printer.style('U').tableCustom([
+          // { text: `${Number(invoiceBodyData[i].quantity).toFixed(0) || 0}`, align: "LEFT", width: 0.15 },
+          { text: `${Number(quantity).toFixed(4) || ""}`, align: "LEFT", width: 0.20 },
+          { text: `${""}`, align: "LEFT", width: 0.04 },
+          { text: `${productName || ""}`, align: "LEFT", width: 0.75 },
+          // { text: `${"UNID"} x`, align: "LEFT", width: 0.25 },
+          // { text: `${Number(quantity).toFixed(4) || 0} x ${(+unitPrice - (+unitPriceFovial + +unitPriceCotrans + (isNoTaxableOperation ? +unitPriceIva : 0))).toFixed(4) || 0}`, align: "RIGHT", width: 0.25 },
+          // { text: `${(isNoTaxableOperation === 1 ? (+noTaxableSubTotal - +ivaTaxAmount - +fovialTaxAmount - +cotransTaxAmount) : (+taxableSubTotal - ((documentTypeId === 1 || documentTypeId === 2) ? 0 : +ivaTaxAmount) - +fovialTaxAmount - +cotransTaxAmount)).toFixed(4) || 0}`, align: "RIGHT", width: 0.20 }
+        ]);
+
+        // printer.style('U').tableCustom([
+        //   // { text: `${Number(invoiceBodyData[i].quantity).toFixed(0) || 0}`, align: "LEFT", width: 0.15 },
+        //   // { text: `${"UNID"} x`, align: "LEFT", width: 0.25 },
+        //   { text: `${Number(quantity).toFixed(4) || 0} x $${(+unitPrice - (+unitPriceFovial + +unitPriceCotrans + (isNoTaxableOperation ? +unitPriceIva : 0))).toFixed(4) || 0}`, align: "LEFT", width: 0.50 },
+        //   { text: `${(isNoTaxableOperation === 1 ? (+noTaxableSubTotal - +ivaTaxAmount - +fovialTaxAmount - +cotransTaxAmount) : (+taxableSubTotal - ((documentTypeId === 1 || documentTypeId === 2) ? 0 : +ivaTaxAmount) - +fovialTaxAmount - +cotransTaxAmount)).toFixed(4) || 0}`, align: "RIGHT", width: 0.50 }
+        // ]);
+
+        if((i + 1) < detailsData.length) printer.feed(1);
+      }
+      printer.feed(4)
+      .cut()
+      .close((err) => {
+        if (err) {
+          res.status(500).json({ status: 500, message: 'Printer connection failed!', errorContent: err });
+        } else {
+          res.json({ data: "Printer connection success!" });
+        }
+      });
+    });
+  } catch(err) {
+    console.log(err);
     res.status(500).json({ status: 500, message: 'Printer not found!', errorContent: err });
   }
 }

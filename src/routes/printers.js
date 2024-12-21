@@ -17,7 +17,8 @@ const {
   testNetworkPrinterConnection,
   printTestPage,
   printGuideLines,
-  printCharLine
+  printCharLine,
+  printSaleDetailsToNetworkPrinter
 } = controller;
 
 router.get('/print-guide-lines', printGuideLines);
@@ -35,5 +36,7 @@ router.post('/dtevoucher', printDteVoucher);
 router.post('/printTicketKitchen', printTicketKitchen);
 router.post('/printTicketPreAccount', printTicketPreAccount);
 router.post('/printPackOff', printPackOff);
+
+router.post('/print-sale-details-to-network-printer', printSaleDetailsToNetworkPrinter)
 
 export default router;
