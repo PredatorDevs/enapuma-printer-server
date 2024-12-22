@@ -860,7 +860,16 @@ controller.printInternalSaleTicket = (req, res) => {
 
 controller.printDteVoucher = (req, res) => {
   try {
-    const device  = new escpos.USB(vId, pId);
+    const { useNetworkPrint } = req.query;
+    
+    let device;
+
+    if (+useNetworkPrint === 1) {
+      device = new escpos.Network('192.168.1.100', 9105);
+    } else {
+      device = new escpos.USB(vId, pId);
+    }
+    // const device  = new escpos.USB(vId, pId);
     // const device = new escpos.Network('127.0.0.1', 9105);
     const options = { encoding: "GB18030", width: 48 /* default */ }
     const printer = new escpos.Printer(device, options);
