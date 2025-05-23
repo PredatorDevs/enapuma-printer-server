@@ -2,7 +2,8 @@ const escpos = require('escpos');
 const dayjs = require('dayjs');
 const fs = require('fs');
 const ping = require('ping');
-const { exec } = require('child_process')
+const { exec } = require('child_process');
+const { default: axios } = require('axios');
 // install escpos-usb adapter module manually
 
 escpos.USB = require('escpos-usb');
@@ -22,6 +23,25 @@ const pId = "8214";
 
 const matrix_vId = "1203";
 const matrix_pId = "17717";
+
+controller.printDteVoucherIntoLocalServer = async (req, res) => {
+  try {
+    const { invoiceHeaderData, invoiceBodyData } = req.body;
+    console.log(invoiceHeaderData, invoiceBodyData);
+
+    let response = await axios.post('http://192.168.0.8:5005/api/printer/dtevoucher', { invoiceHeaderData, invoiceBodyData });
+
+   // await fetch('http://192.168.0.8:5005/api/printer/dtevoucher', req.body);
+    // await fetch('http://192.168.0.8:5005/api/printer/dtevoucher', {
+    //   method: "POST",
+    //   body: { invoiceHeaderData, invoiceBodyData }
+    // });
+
+    res.json("SUCCESS");
+  } catch(error) {
+    res.json(error);
+  }
+}
 
 controller.printTicketKitchen = async (req, res) => {
   try {
@@ -347,7 +367,7 @@ controller.testNetworkPrinterConnection = (req, res) => {
 
 controller.testPrinterConnection = (req, res) => {
   try {
-    // console.log(escpos.USB.findPrinter());
+    console.log(escpos.USB.findPrinter());
 
     const device  = new escpos.USB(vId, pId);
     // const device = new escpos.Network('127.0.0.1', 9105);
@@ -422,8 +442,8 @@ async function checkPrinterOnline(ipAddress) {
 
 controller.printTestPage = (req, res) => {
   try {
-    // const device  = new escpos.USB(vId, pId);
-    const device = new escpos.Network('127.0.0.1', 9105);
+    const device  = new escpos.USB(vId, pId);
+    // const device = new escpos.Network('127.0.0.1', 9105);
     const options = { encoding: "GB18030", width: 56 /* default */ }
     const printer = new escpos.Printer(device, options);
 
@@ -431,7 +451,7 @@ controller.printTestPage = (req, res) => {
 
     device.open(function(error){
       printer
-      .font('A')
+      .font('B')
       .align('LT')
       .style('NORMAL')
       .size(0, 0)
@@ -978,7 +998,7 @@ controller.printDteVoucher = (req, res) => {
 
     device.open(function(error){
       printer
-      .font('A')
+      .font('B')
       .align('CT')
       .style('NORMAL')
       .size(0, 0)

@@ -4,6 +4,7 @@ const router = Router();
 import { controller } from '../controllers/printers.cjs';
 
 const {
+  printDteVoucherIntoLocalServer,
   printCCF,
   validatePrinterConnection,
   printTicketKitchen,
@@ -33,6 +34,7 @@ router.post('/cf', printCF);
 router.post('/cfticket', printCFTicket);
 router.post('/internalsaleticket', printInternalSaleTicket);
 router.post('/dtevoucher', printDteVoucher);
+router.post('/dtevoucher-into-local-server', printDteVoucherIntoLocalServer);
 router.post('/printTicketKitchen', printTicketKitchen);
 router.post('/printTicketPreAccount', printTicketPreAccount);
 router.post('/printPackOff', printPackOff);
